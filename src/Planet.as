@@ -25,14 +25,13 @@ package
 		
 		
 		// Public
+		public var linesTween:NumTween;
 		public var planetName:String;
 		public var isVisited:Boolean;
 		
 		public function Planet(name:String, x:int, y:int) 
 		{
-			numTween = new NumTween();
-			numTween.tween(0, 1, 1);
-			addTween(numTween, true);
+			
 			routes = new Vector.<Planet>();
 			planetName = name;
 			isVisited = false;
@@ -53,11 +52,25 @@ package
 			height = size;
 			type = GC.TYPE_PLANET;
 			trace("Planet " + planetName + " created.");
+			
+			numTween = new NumTween();
+			numTween.tween(0, 1, 1,Ease.cubeIn);
+			addTween(numTween, true);
+			super.added();
+			linesTween = new NumTween();
+			linesTween.tween(0, 1, 1, Ease.cubeIn);
+			addTween(linesTween, false);
+		}
+		
+		override public function added():void 
+		{
+			
 		}
 		
 		public function visit():void
 		{
 			isVisited = true;
+			
 		}
 		
 		public function addRoute(p:Planet):void
@@ -102,11 +115,10 @@ package
 		{
 			// Set to the default buffer.
 			Draw.resetTarget();
-			
 			// Draw our routes.
 			for each(var planet:Planet in routes)
 			{
-				Draw.linePlus(x + halfWidth, y + halfHeight, planet.x + planet.halfHeight, planet.y + planet.halfWidth, GC.COLOR_AVAILABLE_ROUTE, numTween.value);
+				Draw.linePlus(x + halfWidth, y + halfHeight, planet.x + planet.halfHeight, planet.y + planet.halfWidth, GC.COLOR_AVAILABLE_ROUTE, linesTween.value);
 			}
 		}
 		

@@ -16,6 +16,7 @@ package
 	 */
 	public class UniverseWorld extends World 
 	{
+		private var lifespan:Number;
 		private var isDragging:Boolean;
 		private var theUniverse:UniverseHelper;
 		private var dragPoint:Point;
@@ -23,16 +24,30 @@ package
 		private var currentPlanet:Planet;
 		private var transitionTween:LinearMotion;
 		private var hoverPlanet:Planet;
+		private var lifespanText:Text;
+		private var lifetime:Number;
+		private var currentDistance:Number;
+		private var nextPlanet:Planet;
 		public function UniverseWorld() 
 		{
 			theUniverse = new UniverseHelper();
 			transitionTween = new LinearMotion();
+			lifespan = 100;
+			lifetime = 0;
+			currentDistance = 0;
 		}
 		
 		override public function begin():void 
 		{
+			Text.size = 24;
+			lifespanText = new Text("LIFE EXPECTANCY: " + (lifespan - lifetime).toFixed(1) + " YEARS",0,0,FP.screen.width);
+			lifespanText.scrollX = 0;
+			lifespanText.scrollY = 0;
+			addGraphic(lifespanText, -1, 0, FP.screen.height - 28);
 			addTween(transitionTween, false);
 			var home:Planet = createPlanet(FP.screen.width / 2, FP.screen.height / 2);
+			FP.camera.x = home.x - FP.screen.width/2;
+			FP.camera.y = home.y - FP.screen.height/2;
 			super.begin();
 		}
 		
@@ -42,6 +57,7 @@ package
 			{
 				FP.camera.x = transitionTween.x;
 				FP.camera.y = transitionTween.y;
+				lifespanText.text = "LIFE EXPECTANCY: " + (lifespan - lifetime + currentDistance * (1 - transitionTween.scale)).toFixed(1) + " YEARS";
 			}
 			else
 			{
@@ -74,7 +90,10 @@ package
 					{
 						if (currentPlanet.hasRouteTo(clickedPlanet))
 						{
-							setCurrentPlanet(clickedPlanet);
+							nextPlanet = clickedPlanet;
+							centerPlanet(currentPlanet, 1, gotoNextPlanet, Ease.cubeOut);
+							currentDistance = 0;
+							//setCurrentPlanet(clickedPlanet);
 						}
 					}
 				}
@@ -87,20 +106,34 @@ package
 			}
 		}
 		
+		private function gotoNextPlanet():void
+		{
+			centerPlanet(nextPlanet, 2.5, completeTravel, null);
+			currentDistance = FP.distance(currentPlanet.x, currentPlanet.y, nextPlanet.x, nextPlanet.y) / GC.SCALE_LIGHTYEARS;
+			lifetime += currentDistance;
+		}
+		
+		private function completeTravel():void
+		{
+			 setCurrentPlanet(nextPlanet);
+		}
+		
 		public function setCurrentPlanet(p:Planet):void
 		{
 			if (currentPlanet != null)
 			{
 				Image(currentPlanet.graphic).color = 0xffffff;
+				
 			}
 			currentPlanet = p;
+			currentPlanet.linesTween.start();
 			Image(currentPlanet.graphic).color = GC.COLOR_CURRENT_PLANET;
-			centerPlanet(currentPlanet);
+			//centerPlanet(currentPlanet, 5);
 			if (!currentPlanet.isVisited)
 			{
 				// It's our first time here! Sweet!
 				currentPlanet.visit();
-				var initialPlanets:uint = FP.rand(7);
+				var initialPlanets:uint = FP.rand(7) + FP.rand(3);
 				for (var i:uint = 0; i < initialPlanets; i++)
 				{
 					currentPlanet.addRoute(createPlanet(currentPlanet.x, currentPlanet.y));
@@ -111,9 +144,10 @@ package
 			trace("setCurrentPlanet");
 		}
 		
-		public function centerPlanet(p:Planet):void
+		public function centerPlanet(p:Planet, t:Number = 1, callback:Function = null, easing:Function = null):void
 		{
-			transitionTween.setMotion(FP.camera.x, FP.camera.y, (p.x + p.halfWidth) - FP.screen.width / 2, (p.y + p.halfHeight) - FP.screen.height / 2, 1, Ease.cubeOut);
+			transitionTween.complete = callback;
+			transitionTween.setMotion(FP.camera.x, FP.camera.y, (p.x + p.halfWidth) - FP.screen.width / 2, (p.y + p.halfHeight) - FP.screen.height / 2, t, easing);
 			transitionTween.start();
 		}
 		
