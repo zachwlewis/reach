@@ -1,11 +1,16 @@
 package  
 {
 	import flash.display.BitmapData;
+	import flash.geom.Point;
 	import net.flashpunk.Entity;
 	import net.flashpunk.FP;
+	import net.flashpunk.graphics.Graphiclist;
 	import net.flashpunk.graphics.Image;
+	import net.flashpunk.graphics.Text;
+	import net.flashpunk.tweens.misc.NumTween;
 	import net.flashpunk.utils.Draw;
 	import flash.display.BlendMode;
+	import net.flashpunk.utils.Ease;
 	
 	/**
 	 * ...
@@ -15,6 +20,8 @@ package
 	{
 		// Protected
 		protected var routes:Vector.<Planet>;
+		protected var numTween:NumTween;
+		protected var nameText:Text;
 		
 		
 		// Public
@@ -23,6 +30,9 @@ package
 		
 		public function Planet(name:String, x:int, y:int) 
 		{
+			numTween = new NumTween();
+			numTween.tween(0, 1, 1);
+			addTween(numTween, true);
 			routes = new Vector.<Planet>();
 			planetName = name;
 			isVisited = false;
@@ -34,6 +44,10 @@ package
 			Draw.setTarget(bmd);
 			Draw.circlePlus(size / 2, size / 2, size / 2, 0xffffff, 1, true);
 			var g:Image = new Image(bmd);
+			Text.size = 24;
+			nameText = new Text(name);
+			nameText.x = -nameText.width;
+			nameText.y = -24;
 			graphic = g;
 			width = size;
 			height = size;
@@ -92,8 +106,20 @@ package
 			// Draw our routes.
 			for each(var planet:Planet in routes)
 			{
-				Draw.linePlus(x + halfWidth, y + halfHeight, planet.x + planet.halfHeight, planet.y + planet.halfWidth, GC.COLOR_AVAILABLE_ROUTE);
+				Draw.linePlus(x + halfWidth, y + halfHeight, planet.x + planet.halfHeight, planet.y + planet.halfWidth, GC.COLOR_AVAILABLE_ROUTE, numTween.value);
 			}
+		}
+		
+		public function drawName(c:uint = 0xffffff):void
+		{
+			nameText.color = c;
+			nameText.render(FP.buffer, new Point(x, y), FP.camera);
+		}
+		
+		override public function update():void 
+		{
+			Image(graphic).alpha = numTween.value;
+			super.update();
 		}
 		
 		public function center():void

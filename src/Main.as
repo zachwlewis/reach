@@ -2,6 +2,7 @@ package
 {
 	import flash.display.Sprite;
 	import flash.events.Event;
+	import flash.text.Font;
 	import net.flashpunk.Engine;
 	import net.flashpunk.FP;
 	

@@ -3,6 +3,7 @@ package
 	import flash.geom.Point;
 	import net.flashpunk.FP;
 	import net.flashpunk.graphics.Image;
+	import net.flashpunk.graphics.Text;
 	import net.flashpunk.tweens.motion.LinearMotion;
 	import net.flashpunk.tweens.motion.LinearPath;
 	import net.flashpunk.utils.Ease;
@@ -21,6 +22,7 @@ package
 		private var initialCamera:Point;
 		private var currentPlanet:Planet;
 		private var transitionTween:LinearMotion;
+		private var hoverPlanet:Planet;
 		public function UniverseWorld() 
 		{
 			theUniverse = new UniverseHelper();
@@ -50,6 +52,7 @@ package
 		
 		protected function updateMouse():void
 		{
+			hoverPlanet = Planet(collidePoint("planet", mouseX, mouseY));
 			if (Input.mousePressed)
 			{
 				// Start camera pan.
@@ -144,7 +147,12 @@ package
 		
 		override public function render():void 
 		{
+			if (hoverPlanet != null)
+			{
+				hoverPlanet.drawName();
+			}
 			currentPlanet.drawRoutes();
+			currentPlanet.drawName(GC.COLOR_CURRENT_PLANET);
 			super.render();
 		}
 		
