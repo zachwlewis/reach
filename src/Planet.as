@@ -22,16 +22,33 @@ package
 		protected var routes:Vector.<Planet>;
 		protected var numTween:NumTween;
 		protected var nameText:Text;
+		protected var powerupText:Text;
 		
 		
 		// Public
 		public var linesTween:NumTween;
 		public var planetName:String;
 		public var isVisited:Boolean;
+		public var powerup:uint;
 		
 		public function Planet(name:String, x:int, y:int) 
 		{
-			
+			var powerupMod:Number = FP.random;
+			if (powerupMod > 0.75)
+			{
+				// this is a speed boost.
+				powerup = 1;
+			}
+			else if (powerupMod > 0.5)
+			{
+				// this is a life boost.
+				powerup = 2;
+			}
+			else
+			{
+				// No powerup.
+				powerup = 0;
+			}
 			routes = new Vector.<Planet>();
 			planetName = name;
 			isVisited = false;
@@ -52,7 +69,10 @@ package
 			height = size;
 			type = GC.TYPE_PLANET;
 			trace("Planet " + planetName + " created.");
-			
+			Text.size = 18;
+			powerupText = new Text("UNKNOWN", 0, 0, 320, 128);
+			powerupText.x = width;
+			powerupText.y = height;
 			numTween = new NumTween();
 			numTween.tween(0, 1, 1,Ease.cubeIn);
 			addTween(numTween, true);
@@ -70,7 +90,33 @@ package
 		public function visit():void
 		{
 			isVisited = true;
+			switch(powerup)
+			{
+				case 0:
+					powerupText.text = "THIS PLANET IS\nUNREMARKABLE"
+					break;
+				case 1:
+					powerupText.text = "THIS PLANET HAS ADVANCED TECHNOLOGY\nYOUR SHIP CAN TRAVEL FASTER";
+					break;
+				case 2:
+					powerupText.text = "THIS PLANET HAS BIOLOGICAL ADVANCES\nYOU FEEL YOUNGER";
+					break;
+				case 3:
+					powerupText.text = "THIS PLANET IS\nHOME"
+					break;
+				default:
+					break;
+			}
 			
+		}
+		
+		public function leavePlanet():void
+		{
+			if(powerup != 3)
+			{
+				powerupText.text = "YOU HAVE ALREADY BEEN\nTO THIS PLANET";
+				powerup = 0;
+			}
 		}
 		
 		public function addRoute(p:Planet):void
@@ -126,6 +172,12 @@ package
 		{
 			nameText.color = c;
 			nameText.render(FP.buffer, new Point(x, y), FP.camera);
+		}
+		
+		public function drawPowerup(c:uint = 0xffffff):void
+		{
+			powerupText.color = c;
+			powerupText.render(FP.buffer, new Point(x, y), FP.camera);
 		}
 		
 		override public function update():void 

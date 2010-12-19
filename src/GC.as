@@ -13,6 +13,8 @@ package
 		public static const DISTANCE_CLICK_THRESHOLD:uint = 1;
 		public static const TYPE_PLANET:String = "planet";
 		public static const SCALE_LIGHTYEARS:uint = 32;
+		public static const SCALE_TRAVEL_SPEED:uint = 5;
+		public static const COLOR_HOVER_PLANET:uint = 0x669900;
 	}
 
 }

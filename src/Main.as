@@ -23,8 +23,30 @@ package
 		
 		override public function init():void 
 		{
-			FP.world = new UniverseWorld;
+			if (checkDomain(["thegamestudio.net", "kongregate.com"]))
+			{
+				FP.world = new TitleWorld;
+			}
 			super.init();
+		}
+		
+		public function checkDomain (allowed:*):Boolean
+		{
+			var url:String = FP.stage.loaderInfo.url;
+			var startCheck:int = url.indexOf('://' ) + 3;
+			
+			if (url.substr(0, startCheck) == 'file://') return true;
+			
+			var domainLen:int = url.indexOf('/', startCheck) - startCheck;
+			var host:String = url.substr(startCheck, domainLen);
+			
+			if (allowed is String) allowed = [allowed];
+			for each (var d:String in allowed)
+			{
+				if (host.substr(-d.length, d.length) == d) return true;
+			}
+			
+			return false;
 		}
 		
 	}

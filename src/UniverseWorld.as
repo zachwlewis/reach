@@ -4,10 +4,12 @@ package
 	import net.flashpunk.FP;
 	import net.flashpunk.graphics.Image;
 	import net.flashpunk.graphics.Text;
+	import net.flashpunk.Sfx;
 	import net.flashpunk.tweens.motion.LinearMotion;
 	import net.flashpunk.tweens.motion.LinearPath;
 	import net.flashpunk.utils.Ease;
 	import net.flashpunk.utils.Input;
+	import net.flashpunk.utils.Key;
 	import net.flashpunk.World;
 	
 	/**
@@ -28,8 +30,16 @@ package
 		private var lifetime:Number;
 		private var currentDistance:Number;
 		private var nextPlanet:Planet;
+		private var home:Planet;
+		private var warplevel:uint = 1;
+		private var bgm:Sfx;
+		private var select:Sfx;
+		private var powerup:Sfx;
 		public function UniverseWorld() 
 		{
+			bgm = new Sfx(Assets.BGM);
+			select = new Sfx(Assets.SELECT);
+			powerup = new Sfx(Assets.Powerup);
 			theUniverse = new UniverseHelper();
 			transitionTween = new LinearMotion();
 			lifespan = 100;
@@ -39,13 +49,16 @@ package
 		
 		override public function begin():void 
 		{
+			bgm.loop(0.025);
 			Text.size = 24;
 			lifespanText = new Text("LIFE EXPECTANCY: " + (lifespan - lifetime).toFixed(1) + " YEARS",0,0,FP.screen.width);
 			lifespanText.scrollX = 0;
 			lifespanText.scrollY = 0;
 			addGraphic(lifespanText, -1, 0, FP.screen.height - 28);
 			addTween(transitionTween, false);
-			var home:Planet = createPlanet(FP.screen.width / 2, FP.screen.height / 2);
+			home = createPlanet(FP.screen.width / 2, FP.screen.height / 2);
+			home.powerup = 3;
+			setCurrentPlanet(home, true);
 			FP.camera.x = home.x - FP.screen.width/2;
 			FP.camera.y = home.y - FP.screen.height/2;
 			super.begin();
@@ -57,7 +70,11 @@ package
 			{
 				FP.camera.x = transitionTween.x;
 				FP.camera.y = transitionTween.y;
-				lifespanText.text = "LIFE EXPECTANCY: " + (lifespan - lifetime + currentDistance * (1 - transitionTween.scale)).toFixed(1) + " YEARS";
+				if (lifetime + currentDistance * transitionTween.percent >= lifespan)
+				{
+					FP.world = new GameOverWorld(FP.distance(home.x+home.halfWidth, home.y + home.halfHeight, FP.camera.x + FP.screen.width/2, FP.camera.y + FP.screen.height/2), typeCount(GC.TYPE_PLANET));
+				}
+				lifespanText.text = "LIFE EXPECTANCY: " + (lifespan - lifetime - currentDistance * (transitionTween.percent)).toFixed(1) + " YEARS";
 			}
 			else
 			{
@@ -68,6 +85,10 @@ package
 		
 		protected function updateMouse():void
 		{
+			if (Input.pressed(Key.ESCAPE))
+			{
+				FP.world = new TitleWorld();
+			}
 			hoverPlanet = Planet(collidePoint("planet", mouseX, mouseY));
 			if (Input.mousePressed)
 			{
@@ -90,6 +111,7 @@ package
 					{
 						if (currentPlanet.hasRouteTo(clickedPlanet))
 						{
+							select.play(0.1);
 							nextPlanet = clickedPlanet;
 							centerPlanet(currentPlanet, 1, gotoNextPlanet, Ease.cubeOut);
 							currentDistance = 0;
@@ -108,22 +130,25 @@ package
 		
 		private function gotoNextPlanet():void
 		{
-			centerPlanet(nextPlanet, 2.5, completeTravel, null);
-			currentDistance = FP.distance(currentPlanet.x, currentPlanet.y, nextPlanet.x, nextPlanet.y) / GC.SCALE_LIGHTYEARS;
-			lifetime += currentDistance;
+			currentDistance = FP.distance(currentPlanet.x, currentPlanet.y, nextPlanet.x, nextPlanet.y) / (GC.SCALE_LIGHTYEARS * warplevel);
+			centerPlanet(nextPlanet, currentDistance / GC.SCALE_TRAVEL_SPEED, completeTravel, null);
+			
+			
 		}
 		
 		private function completeTravel():void
 		{
-			 setCurrentPlanet(nextPlanet);
+			setCurrentPlanet(nextPlanet);
+			lifetime += currentDistance;
+			currentDistance = 0;
 		}
 		
-		public function setCurrentPlanet(p:Planet):void
+		public function setCurrentPlanet(p:Planet, isHome:Boolean = false):void
 		{
 			if (currentPlanet != null)
 			{
 				Image(currentPlanet.graphic).color = 0xffffff;
-				
+				currentPlanet.leavePlanet();
 			}
 			currentPlanet = p;
 			currentPlanet.linesTween.start();
@@ -133,7 +158,28 @@ package
 			{
 				// It's our first time here! Sweet!
 				currentPlanet.visit();
-				var initialPlanets:uint = FP.rand(7) + FP.rand(3);
+				// Let's get our powerups!
+				if (currentPlanet.powerup == 1)
+				{
+					warplevel++;
+					powerup.play();
+				}
+				else if(currentPlanet.powerup == 2)
+				{
+					lifetime-= 15;
+					lifespanText.text = "LIFE EXPECTANCY: " + (lifespan - lifetime - currentDistance * (transitionTween.percent)).toFixed(1) + " YEARS";
+					powerup.play();
+				}
+				var initialPlanets:uint = FP.rand(7);
+				if (isHome)
+				{
+					// Force a minimum of three planets for home.
+					initialPlanets += 3;
+				}
+				else
+				{
+					initialPlanets += FP.rand(3)
+				}
 				for (var i:uint = 0; i < initialPlanets; i++)
 				{
 					currentPlanet.addRoute(createPlanet(currentPlanet.x, currentPlanet.y));
@@ -170,10 +216,6 @@ package
 			else
 			{
 				theUniverse.addPlanet(newPlanet);
-				if (currentPlanet == null)
-				{
-					setCurrentPlanet(newPlanet);
-				}
 				add(newPlanet);
 				return newPlanet;
 			}
@@ -181,13 +223,25 @@ package
 		
 		override public function render():void 
 		{
+			
+			currentPlanet.drawRoutes();
+			
+			super.render();
+			
+			currentPlanet.drawName(GC.COLOR_CURRENT_PLANET);
+			currentPlanet.drawPowerup(GC.COLOR_CURRENT_PLANET);
+			
 			if (hoverPlanet != null)
 			{
 				hoverPlanet.drawName();
+				hoverPlanet.drawPowerup();
 			}
-			currentPlanet.drawRoutes();
-			currentPlanet.drawName(GC.COLOR_CURRENT_PLANET);
-			super.render();
+		}
+		
+		override public function end():void 
+		{
+			bgm.stop();
+			super.end();
 		}
 		
 	}
