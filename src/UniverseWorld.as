@@ -83,11 +83,19 @@ package
 			super.update();
 		}
 		
+		protected function quit():void
+		{
+			//None of this map cheating bullshit.
+			
+		}
+		
 		protected function updateMouse():void
 		{
 			if (Input.pressed(Key.ESCAPE))
 			{
-				FP.world = new TitleWorld();
+				FP.camera.x = (currentPlanet.x + currentPlanet.halfWidth) - FP.screen.width / 2;
+				FP.camera.y = (currentPlanet.y + currentPlanet.halfHeight) - FP.screen.height / 2;
+				FP.world = new GameOverWorld(FP.distance(home.x+home.halfWidth, home.y + home.halfHeight, FP.camera.x + FP.screen.width/2, FP.camera.y + FP.screen.height/2), typeCount(GC.TYPE_PLANET), true);
 			}
 			hoverPlanet = Planet(collidePoint("planet", mouseX, mouseY));
 			if (Input.mousePressed)
