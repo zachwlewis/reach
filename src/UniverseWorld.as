@@ -174,7 +174,7 @@ package
 				}
 				else if(currentPlanet.powerup == 2)
 				{
-					lifetime-= 15;
+					lifetime-= 10;
 					lifespanText.text = "LIFE EXPECTANCY: " + (lifespan - lifetime - currentDistance * (transitionTween.percent)).toFixed(1) + " YEARS";
 					powerup.play();
 				}
